@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "42096004388",
+    "project_id": "fashion-app-ed9d3",
+    "storage_bucket": "fashion-app-ed9d3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:42096004388:android:23028b20bed6be435137b1",
+        "android_client_info": {
+          "package_name": "com.moroni.showroomflow"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "42096004388-9vc8lc6tlih4q2vubhi2elmg86drbp6i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.moroni.showroomflow",
+            "certificate_hash": "60aa2e568462ac94be344c71ef612b3546c72b4a"
+          }
+        },
+        {
+          "client_id": "42096004388-k9tefl4tj4srokh3u81ldb4lfsup28fq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.moroni.showroomflow",
+            "certificate_hash": "12158c1db1dd7589cf4ff643cf6b986e6b79537d"
+          }
+        },
+        {
+          "client_id": "42096004388-6sj5253hapco6v1ej4gtv0fosde8aidk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoR4Y_HgsEfZ_51JDyePPTLfCFn7BiFoc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "42096004388-6sj5253hapco6v1ej4gtv0fosde8aidk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "42096004388-d72n2bauglbdjq47u2oqk3uj5hp95t1q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.spadini.fashionApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:42096004388:android:32a48eb0dd5a73735137b1",
+        "android_client_info": {
+          "package_name": "com.spadini.fashion_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "42096004388-o88idffli38cnk3garbo9rfvr6tkkgcj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.spadini.fashion_app",
+            "certificate_hash": "60aa2e568462ac94be344c71ef612b3546c72b4a"
+          }
+        },
+        {
+          "client_id": "42096004388-6sj5253hapco6v1ej4gtv0fosde8aidk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoR4Y_HgsEfZ_51JDyePPTLfCFn7BiFoc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "42096004388-6sj5253hapco6v1ej4gtv0fosde8aidk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "42096004388-d72n2bauglbdjq47u2oqk3uj5hp95t1q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.spadini.fashionApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
