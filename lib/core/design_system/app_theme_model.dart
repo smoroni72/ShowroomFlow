@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppThemeModel {
   final String key;
+  final String? splashImageUrl;
 
   final Color background;
   final Color surface;
@@ -18,6 +19,7 @@ class AppThemeModel {
 
   const AppThemeModel({
     required this.key,
+    this.splashImageUrl,
     required this.background,
     required this.surface,
     required this.primary,
@@ -31,6 +33,7 @@ class AppThemeModel {
 
   AppThemeModel copyWith({
     String? key,
+    String? splashImageUrl,
     Color? background,
     Color? surface,
     Color? primary,
@@ -43,6 +46,7 @@ class AppThemeModel {
   }) {
     return AppThemeModel(
       key: key ?? this.key,
+      splashImageUrl: splashImageUrl ?? this.splashImageUrl,
       background: background ?? this.background,
       surface: surface ?? this.surface,
       primary: primary ?? this.primary,

@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/app_drawer.dart';
+import '../../auth/auth_provider.dart';
 
 import '../../visits/screens/my_visit_requests_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
 
   final String initialEmail;
   final String initialContactName;
@@ -16,10 +19,10 @@ class ProfileScreen extends StatefulWidget {
   });
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   final _shopController = TextEditingController();
   final _contactController = TextEditingController();
@@ -40,12 +43,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> loadProfile() async {
 
     final user = FirebaseAuth.instance.currentUser;
+    final tenantId = ref.read(tenantIdProvider);
 
     _emailController.text = user?.email ?? "";
 
-    if (user == null) return;
+    if (user == null || tenantId == null) return;
 
     final doc = await FirebaseFirestore.instance
+        .collection("tenants")
+        .doc(tenantId)
         .collection("users")
         .doc(user.uid)
         .get();
@@ -74,10 +80,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> saveProfile() async {
 
     final user = FirebaseAuth.instance.currentUser;
+    final tenantId = ref.read(tenantIdProvider);
 
-    if (user == null) return;
+    if (user == null || tenantId == null) return;
 
     await FirebaseFirestore.instance
+        .collection("tenants")
+        .doc(tenantId)
         .collection("users")
         .doc(user.uid)
         .set({
@@ -103,6 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
+      drawer: const AppDrawer(),
 
       appBar: AppBar(
         title: const Text("Profilo negozio"),
@@ -185,6 +195,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           FutureBuilder<QuerySnapshot>(
             future: FirebaseFirestore.instance
+                .collection("tenants")
+                .doc(ref.read(tenantIdProvider) ?? "")
                 .collection("visit_requests")
                 .where(
               "userId",

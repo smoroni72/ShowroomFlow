@@ -1,14 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/runway_model.dart';
+import '../../auth/auth_provider.dart';
+import '../../tenant/tenant_provider.dart';
 
 final runwayProvider =
 FutureProvider.family<List<RunwayLook>, String>((ref, brandId) async {
+  final tenantId = ref.watch(tenantProvider);
+
+  if (tenantId == null || tenantId.isEmpty) {
+    return [];
+  }
 
   final db = FirebaseFirestore.instance;
 
   /// trova stagione pubblicata
   final seasonSnap = await db
+      .collection('tenants')
+      .doc(tenantId)
       .collection("brands")
       .doc(brandId)
       .collection("seasons")
@@ -22,6 +31,8 @@ FutureProvider.family<List<RunwayLook>, String>((ref, brandId) async {
 
   /// carica runway
   final runwaySnap = await db
+      .collection('tenants')
+      .doc(tenantId)
       .collection("brands")
       .doc(brandId)
       .collection("seasons")

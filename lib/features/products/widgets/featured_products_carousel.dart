@@ -104,6 +104,7 @@ class _ProductCard extends StatelessWidget {
                   image: image,
                   fit: BoxFit.cover,
                   width: double.infinity,
+                  size: ImageSize.small, // ⚡️ Ottimizzazione per carosello home
                 ),
               ),
             ),

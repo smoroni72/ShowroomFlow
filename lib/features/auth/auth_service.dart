@@ -13,15 +13,15 @@ class AuthService {
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
     if (googleUser == null) {
-    throw Exception("Login annullato");
+      throw Exception("Login annullato");
     }
 
     final GoogleSignInAuthentication googleAuth =
     await googleUser.authentication;
 
     final credential = GoogleAuthProvider.credential(
-    accessToken: googleAuth.accessToken,
-    idToken: googleAuth.idToken,
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
     );
 
     final userCredential =
@@ -35,56 +35,27 @@ class AuthService {
   }
 
   Future<void> _createUserIfNotExists(User user) async {
-
-    final ref = _db.collection("users").doc(user.uid);
-
-    final doc = await ref.get();
-
-    if (!doc.exists) {
-
-      await ref.set({
-
-        "email": user.email,
-        "name": user.displayName ?? "",
-        "shopName": "",
-        "role": "retailer",
-        "city": "",
-        "phone": "",
-        "fcmToken": "",
-        "createdAt": FieldValue.serverTimestamp(),
-
-      });
-
-    }
-
+    // In multi-tenant, we don't auto-create in root 'users'.
+    // Entry point is usually 'users' managed by the system.
+    print("User logged in: ${user.uid}");
   }
 
   /// REGISTER EMAIL
-
   Future<UserCredential> signUpEmail({
     required String email,
     required String password,
     required String shopName,
   }) async {
-
     final cred = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
 
     await cred.user!.sendEmailVerification();
-
     await cred.user!.updateDisplayName(shopName);
 
-    await _db.collection("users").doc(cred.user!.uid).set({
-      "email": email,
-      "name": shopName,
-      "shopName": shopName,
-      "role": "retailer",
-      "city": "",
-      "phone": "",
-      "createdAt": FieldValue.serverTimestamp(),
-    });
+    // Note: This user will need to be assigned to a tenant in 'users'
+    // by an administrator to access full app features.
 
     return cred;
   }

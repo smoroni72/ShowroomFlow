@@ -15,34 +15,38 @@ class CategoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categories = ref.watch(categoryProvider(brandId));
+    final categoriesAsync = ref.watch(categoryProvider(brandId));
 
     return Scaffold(
       appBar: AppBar(
         title: Text(brandName),
       ),
-      body: ListView.builder(
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final category = categories[index];
+      body: categoriesAsync.when(
+        data: (categories) => ListView.builder(
+          itemCount: categories.length,
+          itemBuilder: (context, index) {
+            final category = categories[index];
 
-          return ListTile(
-            title: Text(category.name),
-            trailing: const Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProductListScreen(
-                    brandId: brandId,
-                    categoryId: category.id,
-                    categoryName: category.name,
+            return ListTile(
+              title: Text(category.name),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProductListScreen(
+                      brandId: brandId,
+                      categoryId: category.id,
+                      categoryName: category.name,
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Errore: $err')),
       ),
     );
   }

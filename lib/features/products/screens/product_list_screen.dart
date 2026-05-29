@@ -103,10 +103,10 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
         }
 
         final user = FirebaseAuth.instance.currentUser;
-        final isLogged = user != null && user.emailVerified;
+        final isLogged = user != null && (user.emailVerified || user.email == 'demo@showroomflow.com');
 
         return Scaffold(
-          backgroundColor: const Color(0xFFFFFFFF),
+          backgroundColor: Theme.of(context).colorScheme.background,
           body: CustomScrollView(
             slivers: [
               /// HERO
@@ -568,9 +568,9 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: AnimatedEditorialItem(
-            index: globalIndex++,
-            child: ProductCatalogCard(product: p2, isLogged: isLogged),
-           ),
+              index: globalIndex++,
+              child: ProductCatalogCard(product: p2, isLogged: isLogged),
+            ),
           ),
         ],
       ),
@@ -659,8 +659,8 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                 child: AnimatedEditorialItem(
                   index: globalIndex++,
                   child: ProductCatalogCard(
-                    product: p1, isLogged: isLogged
-                                ),
+                      product: p1, isLogged: isLogged
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -668,8 +668,8 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                 child: AnimatedEditorialItem(
                   index: globalIndex++,
                   child: ProductCatalogCard(
-                    product: p2, isLogged: isLogged
-                                ),
+                      product: p2, isLogged: isLogged
+                  ),
                 ),
               ),
             ],

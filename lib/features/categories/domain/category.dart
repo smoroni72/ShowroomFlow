@@ -8,4 +8,12 @@ class Category {
     required this.brandId,
     required this.name,
   });
+
+  factory Category.fromFirestore(String id, Map<String, dynamic> data) {
+    return Category(
+      id: id,
+      brandId: data['brandId'] ?? '',
+      name: data['name'] ?? '',
+    );
+  }
 }

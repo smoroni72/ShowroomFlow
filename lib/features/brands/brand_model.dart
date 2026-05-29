@@ -7,6 +7,7 @@ class Brand {
   final String coverImage;
   final String description;
   final int order;
+  final bool hasPublishedSeasons;
 
   const Brand({
     required this.id,
@@ -15,10 +16,15 @@ class Brand {
     required this.coverImage,
     required this.description,
     required this.order,
+    this.hasPublishedSeasons = false,
   });
 
   factory Brand.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+
+    // Supporto per vari tipi di valore (bool, stringa) per flessibilità
+    final rawPublished = data['hasPublishedSeasons'];
+    final bool hasPublished = rawPublished == true || rawPublished == 'true';
 
     return Brand(
       id: doc.id,
@@ -27,6 +33,7 @@ class Brand {
       coverImage: data['coverImage'] ?? '',
       description: data['description'] ?? '',
       order: data['order'] ?? 0,
+      hasPublishedSeasons: hasPublished,
     );
   }
 }

@@ -1,15 +1,23 @@
+import 'package:fashion_app/features/tenant/tenant_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../auth/auth_provider.dart';
 import 'domain/category.dart';
 
 final categoryProvider =
-Provider.family<List<Category>, String>((ref, brandId) {
-  final allCategories = [
-    Category(id: 'c1', brandId: '1', name: 'Giacche'),
-    Category(id: 'c2', brandId: '1', name: 'Pantaloni'),
-    Category(id: 'c3', brandId: '2', name: 'Maglieria'),
-    Category(id: 'c4', brandId: '2', name: 'Camicie'),
-    Category(id: 'c5', brandId: '3', name: 'Piumini'),
-  ];
+StreamProvider.family<List<Category>, String>((ref, brandId) {
+  final tenantId = ref.watch(tenantProvider);
+  if (tenantId == null || tenantId.isEmpty) {
+    return Stream.value([]);
+  }
 
-  return allCategories.where((c) => c.brandId == brandId).toList();
+  return FirebaseFirestore.instance
+      .collection('tenants')
+      .doc(tenantId)
+      .collection('categories')
+      .where('brandId', isEqualTo: brandId)
+      .snapshots()
+      .map((snapshot) =>
+      snapshot.docs.map((doc) => Category.fromFirestore(doc.id, doc.data())).toList());
 });
+

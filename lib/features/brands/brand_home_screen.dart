@@ -64,8 +64,8 @@ class _BrandHomeScreenState extends ConsumerState<BrandHomeScreen> {
     final headerImage =
     widget.coverImage.isNotEmpty ? widget.coverImage : widget.logoUrl;
 
-    final productsAsync =
-    ref.watch(productsProvider(widget.brandId));
+    final featuredProductsAsync = ref.watch(featuredProductsProvider(widget.brandId));
+    final categoriesAsync = ref.watch(homeCategoriesProvider(widget.brandId));
 
     return Scaffold(
 
@@ -161,6 +161,7 @@ class _BrandHomeScreenState extends ConsumerState<BrandHomeScreen> {
                     child: ProductImage(
                       image: headerImage,
                       fit: BoxFit.cover,
+                      size: ImageSize.large, // Hero image usa large
                     ),
                   ),
 
@@ -197,6 +198,7 @@ class _BrandHomeScreenState extends ConsumerState<BrandHomeScreen> {
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
+                        size: ImageSize.small, // Logo è piccolo
                       ),
                     ),
                   ),
@@ -243,7 +245,7 @@ class _BrandHomeScreenState extends ConsumerState<BrandHomeScreen> {
 
           /// CATEGORIE stile editoriale Zara
           SliverToBoxAdapter(
-            child: productsAsync.when(
+            child: categoriesAsync.when(
 
               loading: () => const Padding(
                 padding: EdgeInsets.all(20),
@@ -337,7 +339,7 @@ class _BrandHomeScreenState extends ConsumerState<BrandHomeScreen> {
 
           /// FEATURED
           SliverToBoxAdapter(
-            child: productsAsync.when(
+            child: featuredProductsAsync.when(
 
               loading: () => const SizedBox(),
 
@@ -400,89 +402,90 @@ class _BrandHomeScreenState extends ConsumerState<BrandHomeScreen> {
           duration: const Duration(milliseconds: 900),
           curve: Curves.easeInOutCubic,
           builder: (context, scale, child) {
-        
+
             return Transform.scale(
               scale: scale,
               child: child,
             );
           },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(
-                      begin: 0,
-                      end: isActive ? -8 : 0,
-                    ),
-                    duration: const Duration(milliseconds: 900),
-                    curve: Curves.easeInOut,
-                    builder: (context, offset, child) {
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween(
+                    begin: 0,
+                    end: isActive ? -8 : 0,
+                  ),
+                  duration: const Duration(milliseconds: 900),
+                  curve: Curves.easeInOut,
+                  builder: (context, offset, child) {
 
-                      return Transform.translate(
-                        offset: Offset(0, offset),
-                        child: child,
-                      );
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Hero(
-                        tag: "category_${widget.brandId}_$categoryId",
-                        child: AspectRatio(
-                          aspectRatio: 1.2,
-                          child: ProductImage(
-                            image: image,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
+                    return Transform.translate(
+                      offset: Offset(0, offset),
+                      child: child,
+                    );
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Hero(
+                      tag: "category_${widget.brandId}_$categoryId",
+                      child: AspectRatio(
+                        aspectRatio: 1.2,
+                        child: ProductImage(
+                          image: image,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          size: ImageSize.medium, // Categorie usano medium
                         ),
                       ),
                     ),
                   ),
-                  if (isActive)
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: -1, end: 2),
-                      duration: const Duration(milliseconds: 1600),
-                      curve: Curves.easeInOut,
-                      builder: (context, value, child) {
-                        return Positioned.fill(
-                          child: Transform.translate(
-                            offset: Offset(value * 250, 0),
-                            child: Container(
-                              width: 80,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.white.withOpacity(0.25),
-                                    Colors.transparent,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
+                ),
+                if (isActive)
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: -1, end: 2),
+                    duration: const Duration(milliseconds: 1600),
+                    curve: Curves.easeInOut,
+                    builder: (context, value, child) {
+                      return Positioned.fill(
+                        child: Transform.translate(
+                          offset: Offset(value * 250, 0),
+                          child: Container(
+                            width: 80,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white.withOpacity(0.25),
+                                  Colors.transparent,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-            
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.center,
-                        colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.transparent,
-                        ],
-                      ),
+                        ),
+                      );
+                    },
+                  ),
+
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.center,
+                      colors: [
+                        Colors.black.withOpacity(0.7),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
-            
-                  Positioned(
+                ),
+
+                Positioned(
                     left: 14,
                     bottom: 14,
                     child: Text(
@@ -494,10 +497,10 @@ class _BrandHomeScreenState extends ConsumerState<BrandHomeScreen> {
                         letterSpacing: 2,
                       ),
                     )
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
         ),
       ),
     );

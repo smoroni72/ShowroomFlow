@@ -1,77 +1,11 @@
-import 'package:fashion_app/features/outfit/screens/runway_preview_screen.dart';
-import 'package:fashion_app/features/outfit/screens/runway_video_preview_screen.dart';
+import 'package:fashion_app/features/outfit/screens/digital_showroom_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fashion_app/features/products/models/product_model.dart';
-
 import '../../core/widgets/product_image.dart';
 
 enum PreviewMode { outfit, editorial }
 
-enum AnchorType { head, neck, shoulder, waist }
-
-class LayerConfig {
-  final AnchorType anchor;
-  final double anchorOffset;
-  final double widthRatio;
-  final int zIndex;
-
-  const LayerConfig({
-    required this.anchor,
-    required this.anchorOffset,
-    required this.widthRatio,
-    required this.zIndex,
-  });
-}
-
-const layerConfigs = {
-  ProductLayer.hat: LayerConfig(
-    anchor: AnchorType.head,
-    anchorOffset: -0.02,
-    widthRatio: 0.35,
-    zIndex: 10,
-  ),
-  ProductLayer.scarf: LayerConfig(
-    anchor: AnchorType.neck,
-    anchorOffset: 0.00,
-    widthRatio: 0.45,
-    zIndex: 9,
-  ),
-  ProductLayer.outerwear: LayerConfig(
-    anchor: AnchorType.shoulder,
-    anchorOffset: 0.02,
-    widthRatio: 0.80,
-    zIndex: 6,
-  ),
-  ProductLayer.top: LayerConfig(
-    anchor: AnchorType.shoulder,
-    anchorOffset: 0.05,
-    widthRatio: 0.72,
-    zIndex: 5,
-  ),
-  ProductLayer.dress: LayerConfig(
-    anchor: AnchorType.neck,
-    anchorOffset: 0.03,
-    widthRatio: 0.75,
-    zIndex: 5,
-  ),
-  ProductLayer.bottom: LayerConfig(
-    anchor: AnchorType.waist,
-    anchorOffset: 0.00,
-    widthRatio: 0.75,
-    zIndex: 4,
-  ),
-  ProductLayer.gloves: LayerConfig(
-    anchor: AnchorType.waist,
-    anchorOffset: 0.15,
-    widthRatio: 0.50,
-    zIndex: 8,
-  ),
-};
-
-enum SilhouetteType {
-  female,
-  male,
-}
+enum SilhouetteType { female, male }
 
 String silhouetteAsset(SilhouetteType type) {
   switch (type) {
@@ -81,7 +15,6 @@ String silhouetteAsset(SilhouetteType type) {
       return 'assets/images/silhouette_donna.png';
   }
 }
-
 
 extension FirstOrNullExtension<E> on Iterable<E> {
   E? get firstOrNull => isEmpty ? null : first;
@@ -104,54 +37,38 @@ class OutfitPreviewScreen extends StatefulWidget {
 }
 
 class _OutfitPreviewScreenState extends State<OutfitPreviewScreen>
-with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   PreviewMode mode = PreviewMode.outfit;
   double topOpacity = 0.45;
   late AnimationController _fabController;
   late Animation<double> _fabAnimation;
 
   SilhouetteType get silhouetteType {
-    final hasMale = widget.selectedProducts
-        .any((p) => p.gender == ProductGender.male);
-    if (hasMale) {
-      return SilhouetteType.male;
-    }
-    return SilhouetteType.female;
+    final hasMale = widget.selectedProducts.any((p) => p.gender == ProductGender.male);
+    return hasMale ? SilhouetteType.male : SilhouetteType.female;
   }
-
-  // SilhouetteType silhouette = SilhouetteType.female;
 
   List<Product> get effectiveProducts {
-    final hasDress = widget.selectedProducts
-        .any((p) => p.layer == ProductLayer.dress);
-
+    final hasDress = widget.selectedProducts.any((p) => p.layer == ProductLayer.dress);
     if (!hasDress) return widget.selectedProducts;
-
     return widget.selectedProducts.where((p) {
-      return p.layer != ProductLayer.top &&
-          p.layer != ProductLayer.bottom;
+      return p.layer != ProductLayer.top && p.layer != ProductLayer.bottom;
     }).toList();
   }
-
 
   @override
   void initState() {
     super.initState();
-
     _fabController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-
     _fabAnimation = CurvedAnimation(
       parent: _fabController,
       curve: Curves.easeOutBack,
     );
-
     Future.delayed(const Duration(milliseconds: 350), () {
-      if (mounted) {
-        _fabController.forward();
-      }
+      if (mounted) _fabController.forward();
     });
   }
 
@@ -168,18 +85,14 @@ with SingleTickerProviderStateMixin {
       body: SafeArea(
         child: Stack(
           children: [
-
-            /// Background
+            /// Background Gradient
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     radius: 0.9,
                     center: const Alignment(0, -0.15),
-                    colors: [
-                      Colors.grey.shade900,
-                      Colors.black,
-                    ],
+                    colors: [Colors.grey.shade900, Colors.black],
                   ),
                 ),
               ),
@@ -205,7 +118,7 @@ with SingleTickerProviderStateMixin {
               ),
             ),
 
-            /// Content
+            /// Content (Outfit or Editorial)
             Positioned.fill(
               top: 72,
               child: AnimatedSwitcher(
@@ -215,9 +128,7 @@ with SingleTickerProviderStateMixin {
                   products: effectiveProducts,
                   topOpacity: topOpacity,
                   silhouetteType: silhouetteType,
-                  onOpacityChanged: (v) {
-                    setState(() => topOpacity = v);
-                  },
+                  onOpacityChanged: (v) => setState(() => topOpacity = v),
                 )
                     : _EditorialMode(
                   products: effectiveProducts,
@@ -226,6 +137,7 @@ with SingleTickerProviderStateMixin {
               ),
             ),
 
+            /// Footer recap
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
@@ -246,42 +158,28 @@ with SingleTickerProviderStateMixin {
               backgroundColor: Colors.white,
               elevation: 8,
               onPressed: () {
-
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => RunwayVideoPreviewScreen(
+                    builder: (_) => DigitalShowroomScreen(
                       products: widget.selectedProducts,
                     ),
                   ),
                 );
-
               },
-              icon: Image.asset(
-                "assets/images/floatingButton.png",
-                width: 20,
-                color: Colors.black,
-              ),
-              label: const Text(
-                "Passerella",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              icon: const Icon(Icons.analytics_outlined, color: Colors.black, size: 20),
+              label: const Text("Showroom Mode", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
             ),
           ),
         ),
       ),
-
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
 
-
 ////////////////////////////////////////////////////////////
-/// OUTFIT MODE (SILHOUETTE)
+/// OUTFIT MODE (WEARABLE ON SILHOUETTE)
 ////////////////////////////////////////////////////////////
 
 class _OutfitMode extends StatelessWidget {
@@ -295,28 +193,19 @@ class _OutfitMode extends StatelessWidget {
     required this.topOpacity,
     required this.onOpacityChanged,
     required this.silhouetteType,
-});
+  });
 
   @override
   Widget build(BuildContext context) {
-    final outerwear =
-        products.where((p) => p.layer == ProductLayer.outerwear).firstOrNull;
-    final top =
-        products.where((p) => p.layer == ProductLayer.top).firstOrNull;
-    final bottom =
-        products.where((p) => p.layer == ProductLayer.bottom).firstOrNull;
-    final dress =
-        products.where((p) => p.layer == ProductLayer.dress).firstOrNull;
-    final hat =
-        products.where((p) => p.layer == ProductLayer.hat).firstOrNull;
-    final scarf =
-        products.where((p) => p.layer == ProductLayer.scarf).firstOrNull;
-    final gloves =
-        products.where((p) => p.layer == ProductLayer.gloves).firstOrNull;
+    final outerwear = products.where((p) => p.layer == ProductLayer.outerwear).firstOrNull;
+    final top = products.where((p) => p.layer == ProductLayer.top).firstOrNull;
+    final bottom = products.where((p) => p.layer == ProductLayer.bottom).firstOrNull;
+    final dress = products.where((p) => p.layer == ProductLayer.dress).firstOrNull;
+    final hat = products.where((p) => p.layer == ProductLayer.hat).firstOrNull;
+    final scarf = products.where((p) => p.layer == ProductLayer.scarf).firstOrNull;
+    final gloves = products.where((p) => p.layer == ProductLayer.gloves).firstOrNull;
 
     final hasDress = dress != null;
-
-
 
     return Center(
       child: Transform.scale(
@@ -332,25 +221,27 @@ class _OutfitMode extends StatelessWidget {
                 alignment: Alignment.center,
                 clipBehavior: Clip.none,
                 children: [
-
                   /// SILHOUETTE
                   Positioned.fill(
                     child: Image.asset(
-                      silhouetteType == SilhouetteType.male
-                          ? 'assets/images/silhouette_uomo.png'
-                          : 'assets/images/silhouette_donna.png',
+                      silhouetteAsset(silhouetteType),
                       fit: BoxFit.contain,
                     ),
                   ),
+
                   /// BOTTOM
                   if (!hasDress && bottom != null)
                     Positioned(
                       top: h * 0.39,
                       left: w * 0.22,
-                      child: _HeroCloth(
-                        tag: 'preview_${bottom.id}',
-                        imageUrl: bottom.outfitImage,
-                        width: w * 0.58,
+                      child: _TransformWrapper(
+                        product: bottom,
+                        canvasHeight: h,
+                        child: _HeroCloth(
+                          tag: 'preview_${bottom.id}',
+                          imageUrl: bottom.outfitImage,
+                          width: w * 0.58,
+                        ),
                       ),
                     ),
 
@@ -359,10 +250,14 @@ class _OutfitMode extends StatelessWidget {
                     Positioned(
                       top: h * 0.13,
                       left: w * 0.28,
-                      child: _HeroCloth(
-                        tag: 'preview_${dress.id}',
-                        imageUrl: dress.outfitImage,
-                        width: w * 0.45,
+                      child: _TransformWrapper(
+                        product: dress,
+                        canvasHeight: h,
+                        child: _HeroCloth(
+                          tag: 'preview_${dress.id}',
+                          imageUrl: dress.outfitImage,
+                          width: w * 0.45,
+                        ),
                       ),
                     ),
 
@@ -370,11 +265,15 @@ class _OutfitMode extends StatelessWidget {
                   if (outerwear != null)
                     Positioned(
                       top: h * 0.13,
-                      child: _HeroCloth(
-                        tag: 'preview_${outerwear.id}',
-                        imageUrl: outerwear.outfitImage,
-                        width: w * 0.45,
-                        highlight: top != null,
+                      child: _TransformWrapper(
+                        product: outerwear,
+                        canvasHeight: h,
+                        child: _HeroCloth(
+                          tag: 'preview_${outerwear.id}',
+                          imageUrl: outerwear.outfitImage,
+                          width: w * 0.45,
+                          highlight: top != null,
+                        ),
                       ),
                     ),
 
@@ -384,15 +283,67 @@ class _OutfitMode extends StatelessWidget {
                       top: h * 0.14,
                       child: Opacity(
                         opacity: outerwear != null ? topOpacity : 1.0,
-                        child: _HeroCloth(
-                          tag: 'preview_${top.id}',
-                          imageUrl: top.outfitImage,
-                          width: w * 0.42,
-                          highlight: outerwear != null,
+                        child: _TransformWrapper(
+                          product: top,
+                          canvasHeight: h,
+                          child: _HeroCloth(
+                            tag: 'preview_${top.id}',
+                            imageUrl: top.outfitImage,
+                            width: w * 0.42,
+                            highlight: outerwear != null,
+                          ),
                         ),
                       ),
                     ),
 
+                  /// HAT
+                  if (hat != null)
+                    Positioned(
+                      top: h * -0.055,
+                      left: w * 0.27,
+                      child: _TransformWrapper(
+                        product: hat,
+                        canvasHeight: h,
+                        child: _HeroCloth(
+                          tag: 'preview_${hat.id}',
+                          imageUrl: hat.outfitImage,
+                          width: w * 0.48,
+                        ),
+                      ),
+                    ),
+
+                  /// SCARF
+                  if (scarf != null)
+                    Positioned(
+                      top: h * 0.13,
+                      child: _TransformWrapper(
+                        product: scarf,
+                        canvasHeight: h,
+                        child: _HeroCloth(
+                          tag: 'preview_${scarf.id}',
+                          imageUrl: scarf.outfitImage,
+                          width: w * 0.46,
+                        ),
+                      ),
+                    ),
+
+                  /// GLOVES
+                  if (gloves != null)
+                    Positioned(
+                      top: h * 0.45,
+                      right: w * 0.05,
+                      child: _TransformWrapper(
+                        product: gloves,
+                        canvasHeight: h,
+                        child: _HeroCloth(
+                          tag: 'preview_${gloves.id}',
+                          imageUrl: gloves.outfitImage,
+                          width: w * 0.55,
+                        ),
+                      ),
+                    ),
+
+                  /// OPACITY SLIDER FOR TOP/OUTERWEAR
                   if (outerwear != null && top != null)
                     Positioned(
                       right: 30,
@@ -400,20 +351,8 @@ class _OutfitMode extends StatelessWidget {
                       bottom: h * 0.28,
                       child: Column(
                         children: [
-
-                          /// LABEL
-                          Text(
-                            "Top",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.85),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-
+                          const Text("Top", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 8),
-
-                          /// SLIDER
                           Expanded(
                             child: RotatedBox(
                               quarterTurns: 3,
@@ -427,53 +366,9 @@ class _OutfitMode extends StatelessWidget {
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 4),
-
-                          /// VALORE (opzionale ma bello)
-                          Text(
-                            "${(topOpacity * 100).round()}%",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 10,
-                            ),
-                          ),
+                          Text("${(topOpacity * 100).round()}%", style: const TextStyle(color: Colors.white38, fontSize: 10)),
                         ],
-                      ),
-                    ),
-
-                  /// HAT
-                  if (hat != null)
-                    Positioned(
-                      top: h * -0.055,
-                      left: w * 0.27,
-                      child: _HeroCloth(
-                        tag: 'preview_${hat.id}',
-                        imageUrl: hat.outfitImage,
-                        width: w * 0.48,
-                      ),
-                    ),
-
-                  /// SCARF
-                  if (scarf != null)
-                    Positioned(
-                      top: h * 0.13,
-                      child: _HeroCloth(
-                        tag: 'preview_${scarf.id}',
-                        imageUrl: scarf.outfitImage,
-                        width: w * 0.46,
-                      ),
-                    ),
-
-                  /// GLOVES
-                  if (gloves != null)
-                    Positioned(
-                      top: h * 0.45,
-                      right: w * 0.05,
-                      child: _HeroCloth(
-                        tag: 'preview_${gloves.id}',
-                        imageUrl: gloves.outfitImage,
-                        width: w * 0.55,
                       ),
                     ),
                 ],
@@ -486,39 +381,26 @@ class _OutfitMode extends StatelessWidget {
   }
 }
 
-
-
 ////////////////////////////////////////////////////////////
-/// EDITORIAL MODE (SIDE COMPOSITION)
+/// EDITORIAL MODE
 ////////////////////////////////////////////////////////////
 
 class _EditorialMode extends StatelessWidget {
   final List<Product> products;
   final SilhouetteType silhouetteType;
 
-  const _EditorialMode({
-    required this.products,
-    required this.silhouetteType,
-  });
+  const _EditorialMode({required this.products, required this.silhouetteType});
 
   @override
   Widget build(BuildContext context) {
-    final outerwear =
-        products.where((p) => p.layer == ProductLayer.outerwear).firstOrNull;
-    final top =
-        products.where((p) => p.layer == ProductLayer.top).firstOrNull;
-    final bottom =
-        products.where((p) => p.layer == ProductLayer.bottom).firstOrNull;
-    final dress =
-        products.where((p) => p.layer == ProductLayer.dress).firstOrNull;
-    final hat =
-        products.where((p) => p.layer == ProductLayer.hat).firstOrNull;
-    final scarf =
-        products.where((p) => p.layer == ProductLayer.scarf).firstOrNull;
-    final gloves =
-        products.where((p) => p.layer == ProductLayer.gloves).firstOrNull;
-
-    final hasDress = dress != null;
+    // ... (stessa logica di recupero capi)
+    final outerwear = products.where((p) => p.layer == ProductLayer.outerwear).firstOrNull;
+    final top = products.where((p) => p.layer == ProductLayer.top).firstOrNull;
+    final bottom = products.where((p) => p.layer == ProductLayer.bottom).firstOrNull;
+    final dress = products.where((p) => p.layer == ProductLayer.dress).firstOrNull;
+    final hat = products.where((p) => p.layer == ProductLayer.hat).firstOrNull;
+    final scarf = products.where((p) => p.layer == ProductLayer.scarf).firstOrNull;
+    final gloves = products.where((p) => p.layer == ProductLayer.gloves).firstOrNull;
 
     return Center(
       child: Transform.scale(
@@ -527,178 +409,119 @@ class _EditorialMode extends StatelessWidget {
           aspectRatio: 1500 / 2000,
           child: LayoutBuilder(
             builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          final h = constraints.maxHeight;
-        
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-        
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: FractionallySizedBox(
-                  heightFactor: 0.96,
-                  alignment: Alignment.bottomCenter,
-                  child: Image.asset(
-                    silhouetteType == SilhouetteType.male
-                        ? 'assets/images/silhouette_uomo.png'
-                        : 'assets/images/silhouette_donna.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-        
-              if (outerwear != null)
-                Positioned(
-                  top: h * 0.18,
-                  left: w * 0.05,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 3,
-                    child: _HeroCloth(
-                      tag: 'preview_${outerwear.id}',
-                      imageUrl: outerwear.outfitImage,
-                      width: w * 0.45,
-                      shadow: false,
+              final w = constraints.maxWidth;
+              final h = constraints.maxHeight;
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  /// SILHOUETTE - Ora identica alla versione Outfit
+                  Positioned.fill(
+                    child: Image.asset(
+                        silhouetteAsset(silhouetteType),
+                        fit: BoxFit.contain
                     ),
                   ),
-                ),
-        
 
-        
-              if (bottom != null)
-                Positioned(
-                  top: h * 0.39,
-                  right: w * 0.00,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 3,
-                    child: _HeroCloth(
-                      tag: 'preview_${bottom.id}',
-                      imageUrl: bottom.outfitImage,
-                      width: w * 0.58,
-                      shadow: false,
-                    ),
-                  ),
-                ),
+                  /// ITEMS - Posizioni "Exploded" sincronizzate ma con movimento editoriale
+                  if (outerwear != null)
+                    _EditorialItem(top: h * 0.16, left: w * -0.05, product: outerwear, width: w * 0.45, canvasHeight: h),
 
-              if (top != null)
-                Positioned(
-                  top: h * 0.18,
-                  right: w * 0.05,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 3,
-                    child: _HeroCloth(
-                      tag: 'preview_${top.id}',
-                      imageUrl: top.outfitImage,
-                      width: w * 0.42,
-                      shadow: false,
-                    ),
-                  ),
-                ),
+                  if (bottom != null)
+                    _EditorialItem(top: h * 0.42, right: w * -0.12, product: bottom, width: w * 0.58, canvasHeight: h),
 
-              if (dress != null)
-                Positioned(
-                  top: h * 0.17,
-                  right: w * 0.05,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 3,
-                    child: _HeroCloth(
-                      tag: 'preview_${dress.id}',
-                      imageUrl: dress.outfitImage,
-                      width: w * 0.45,
-                      shadow: false,
-                    ),
-                  ),
-                ),
+                  if (top != null)
+                    _EditorialItem(top: h * 0.11, right: w * -0.05, product: top, width: w * 0.42, canvasHeight: h),
 
-              if (hat != null)
-                Positioned(
-                  top: h * -0.02,
-                  left: w * 0.10,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 3,
-                    child: _HeroCloth(
-                      tag: 'preview_${hat.id}',
-                      imageUrl: hat.outfitImage,
-                      width: w * 0.48,
-                      shadow: false,
-                    ),
-                  ),
-                ),
-        
-              if (scarf != null)
-                Positioned(
-                  top: h * 0.15,
-                  right: w * 0.08,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 3,
-                    child: _HeroCloth(
-                      tag: 'preview_${scarf.id}',
-                      imageUrl: scarf.outfitImage,
-                      width: w * 0.46,
-                      shadow: false,
-                    ),
-                  ),
-                ),
-        
-              if (gloves != null)
-                Positioned(
-                  top: h * 0.45,
-                  right: w * 0.01,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 3,
-                    child: _HeroCloth(
-                      tag: 'preview_${gloves.id}',
-                      imageUrl: gloves.outfitImage,
-                      width: w * 0.55,
-                      shadow: false,
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-            ),
-            ),
-      ),
-    );
-  }
-}
+                  if (dress != null)
+                    _EditorialItem(top: h * 0.18, right: w * -0.08, product: dress, width: w * 0.45, canvasHeight: h),
 
-////////////////////////////////////////////////////////////
-/// SILHOUETTE
-////////////////////////////////////////////////////////////
+                  if (hat != null)
+                    _EditorialItem(top: h * -0.07, left: w * 0.12, product: hat, width: w * 0.48, canvasHeight: h),
 
-class _SoftSilhouette extends StatelessWidget {
-  const _SoftSilhouette({super.key});
+                  if (scarf != null)
+                    _EditorialItem(top: h * 0.09, right: w * 0.08, product: scarf, width: w * 0.46, canvasHeight: h),
 
-  @override
-  Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      heightFactor: 0.96,
-      alignment: Alignment.bottomCenter,
-      child: Opacity(
-        opacity: 0.7,
-        child: Image.asset(
-          silhouetteAsset(SilhouetteType.female),
-          fit: BoxFit.contain,
-          color: Colors.grey.shade50,
-          colorBlendMode: BlendMode.modulate,
+                  if (gloves != null)
+                    _EditorialItem(top: h * 0.48, left: w * -0.08, product: gloves, width: w * 0.55, canvasHeight: h),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 }
 
+class _EditorialItem extends StatelessWidget {
+  final double top;
+  final double? left;
+  final double? right;
+  final Product product;
+  final double width;
+  final double canvasHeight;
+
+  const _EditorialItem({
+    required this.top,
+    this.left,
+    this.right,
+    required this.product,
+    required this.width,
+    required this.canvasHeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: top,
+      left: left,
+      right: right,
+      child: _TransformWrapper(
+        product: product,
+        canvasHeight: canvasHeight,
+        child: _HeroCloth(
+          tag: 'edit_${product.id}',
+          imageUrl: product.outfitImage,
+          width: width,
+          shadow: true,
+        ),
+      ),
+    );
+  }
+}
+
+
 ////////////////////////////////////////////////////////////
-/// HERO IMAGE
+/// HELPERS & COMPONENTS
 ////////////////////////////////////////////////////////////
+
+class _TransformWrapper extends StatelessWidget {
+  final Product product;
+  final Widget child;
+  final double canvasHeight;
+
+  const _TransformWrapper({required this.product, required this.child, required this.canvasHeight});
+
+  @override
+  Widget build(BuildContext context) {
+    // Normalizzazione Y (su 2000 unità)
+    final double normalizedY = product.outfitYOffset * (canvasHeight / 2000);
+
+    // Normalizzazione X (su 1500 unità, che è la larghezza della nostra griglia)
+    // Usiamo canvasHeight * (1500/2000) per trovare la larghezza logica attuale
+    final double canvasWidth = canvasHeight * (1500 / 2000);
+    final double normalizedX = product.outfitXOffset * (canvasWidth / 1500);
+
+    return Transform.translate(
+      offset: Offset(normalizedX, normalizedY), // Ora usa anche normalizedX
+      child: Transform.scale(
+        scale: product.outfitScale,
+        child: child,
+      ),
+    );
+  }
+}
 
 class _HeroCloth extends StatelessWidget {
   final String tag;
@@ -707,21 +530,10 @@ class _HeroCloth extends StatelessWidget {
   final bool highlight;
   final bool shadow;
 
-  const _HeroCloth({
-    required this.tag,
-    required this.imageUrl,
-    required this.width,
-    this.highlight = false,
-    this.shadow = true,
-  });
+  const _HeroCloth({required this.tag, required this.imageUrl, required this.width, this.highlight = false, this.shadow = true});
 
   @override
   Widget build(BuildContext context) {
-    final image = ProductImage(
-      image: imageUrl,
-      fit: BoxFit.contain,
-    );
-
     return Hero(
       tag: tag,
       child: SizedBox(
@@ -729,24 +541,12 @@ class _HeroCloth extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-
-            /// GLOW dietro il capo
             if (highlight)
               Container(
                 width: width * 0.9,
                 height: width * 0.9,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.15),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
+                decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [Colors.white12, Colors.transparent])),
               ),
-
-            /// OMBRA morbida corpo
             if (shadow)
               Positioned(
                 bottom: -10,
@@ -755,19 +555,15 @@ class _HeroCloth extends StatelessWidget {
                   height: 30,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 30,
-                        spreadRadius: -10,
-                      )
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 30, spreadRadius: -10)],
                   ),
                 ),
               ),
-
-            /// IMMAGINE CAPO
-            image,
+            ProductImage(
+              image: imageUrl,
+              fit: BoxFit.contain,
+              size: ImageSize.medium,
+            ),
           ],
         ),
       ),
@@ -775,87 +571,34 @@ class _HeroCloth extends StatelessWidget {
   }
 }
 
-////////////////////////////////////////////////////////////
-/// FLOAT ANIMATION
-////////////////////////////////////////////////////////////
-class _FloatingLayer extends StatelessWidget {
-  final Widget child;
-  final int delayMs;
-
-  const _FloatingLayer({
-    required this.child,
-    this.delayMs = 0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 18, end: 0),
-      duration: Duration(milliseconds: 380 + delayMs),
-      curve: Curves.easeOutCubic,
-      builder: (_, v, c) {
-        return Opacity(
-          opacity: (1 - (v / 18)).clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, v),
-            child: c,
-          ),
-        );
-      },
-      child: child,
-    );
-  }
-}
-
-////////////////////////////////////////////////////////////
-/// FOOTER
-////////////////////////////////////////////////////////////
-
 class _FooterRecap extends StatelessWidget {
   final List<Product> products;
-
-  const _FooterRecap({
-    required this.products,
-  });
+  const _FooterRecap({required this.products});
 
   @override
   Widget build(BuildContext context) {
     final codes = products.map((e) => e.code).join(' · ');
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
+        border: Border.all(color: Colors.white12),
       ),
       child: Text(
-        codes.isEmpty
-            ? "Seleziona i capi per vedere l’outfit"
-            : codes,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
+        codes.isEmpty ? "Seleziona i capi per vedere l’outfit" : codes,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
     );
   }
 }
-////////////////////////////////////////////////////////////
-/// UI ELEMENTS (unchanged)
-////////////////////////////////////////////////////////////
 
 class _RoundIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-
-  const _RoundIconButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _RoundIconButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -865,11 +608,7 @@ class _RoundIconButton extends StatelessWidget {
       child: Container(
         width: 42,
         height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.10),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withOpacity(0.15)),
-        ),
+        decoration: BoxDecoration(color: Colors.white10, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
         child: Icon(icon, color: Colors.white),
       ),
     );
@@ -879,34 +618,18 @@ class _RoundIconButton extends StatelessWidget {
 class _ModeSwitch extends StatelessWidget {
   final PreviewMode mode;
   final ValueChanged<PreviewMode> onChanged;
-
-  const _ModeSwitch({
-    required this.mode,
-    required this.onChanged,
-  });
+  const _ModeSwitch({required this.mode, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
-      ),
+      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _ModePill(
-            label: "Outfit",
-            selected: mode == PreviewMode.outfit,
-            onTap: () => onChanged(PreviewMode.outfit),
-          ),
-          _ModePill(
-            label: "Editorial",
-            selected: mode == PreviewMode.editorial,
-            onTap: () => onChanged(PreviewMode.editorial),
-          ),
+          _ModePill(label: "Outfit", selected: mode == PreviewMode.outfit, onTap: () => onChanged(PreviewMode.outfit)),
+          _ModePill(label: "Editorial", selected: mode == PreviewMode.editorial, onTap: () => onChanged(PreviewMode.editorial)),
         ],
       ),
     );
@@ -917,37 +640,19 @@ class _ModePill extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-
-  const _ModePill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+  const _ModePill({required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       margin: const EdgeInsets.symmetric(horizontal: 3),
-      decoration: BoxDecoration(
-        color: selected ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: selected ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Text(
-            label,
-            style: TextStyle(
-              color:
-              selected ? Colors.black : Colors.white.withOpacity(0.85),
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Text(label, style: TextStyle(color: selected ? Colors.black : Colors.white70, fontWeight: FontWeight.bold, fontSize: 12)),
         ),
       ),
     );

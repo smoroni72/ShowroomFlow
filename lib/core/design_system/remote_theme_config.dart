@@ -1,5 +1,6 @@
 class RemoteThemeConfig {
   final String preset;
+  final String? splashImageUrl;
 
   final String? background;
   final String? surface;
@@ -13,6 +14,7 @@ class RemoteThemeConfig {
 
   const RemoteThemeConfig({
     required this.preset,
+    this.splashImageUrl,
     this.background,
     this.surface,
     this.primary,
@@ -25,17 +27,22 @@ class RemoteThemeConfig {
   });
 
   factory RemoteThemeConfig.fromMap(Map<String, dynamic>? map) {
+    final preset = (map?['preset'] as String?) ?? 'luxury';
+    final splashImageUrl = map?['splashImageUrl'] as String?;
+    final customColors = (preset == 'custom') ? (map?['customColors'] as Map<String, dynamic>?) : null;
+
     return RemoteThemeConfig(
-      preset: (map?['preset'] as String?) ?? 'luxury',
-      background: map?['background'] as String?,
-      surface: map?['surface'] as String?,
-      primary: map?['primary'] as String?,
-      secondary: map?['secondary'] as String?,
-      accent: map?['accent'] as String?,
-      textPrimary: map?['textPrimary'] as String?,
-      textSecondary: map?['textSecondary'] as String?,
-      overlayDark: map?['overlayDark'] as String?,
-      overlayLight: map?['overlayLight'] as String?,
+      preset: preset,
+      splashImageUrl: splashImageUrl,
+      background: customColors?['background'] ?? map?['background'] as String?,
+      surface: customColors?['surface'] ?? map?['surface'] as String?,
+      primary: customColors?['primary'] ?? map?['primary'] as String?,
+      secondary: customColors?['secondary'] ?? map?['secondary'] as String?,
+      accent: customColors?['accent'] ?? map?['accent'] as String?,
+      textPrimary: customColors?['text'] ?? map?['textPrimary'] as String?,
+      textSecondary: customColors?['textSecondary'] ?? map?['textSecondary'] as String?,
+      overlayDark: customColors?['overlayDark'] ?? map?['overlayDark'] as String?,
+      overlayLight: customColors?['overlayLight'] ?? map?['overlayLight'] as String?,
     );
   }
 }

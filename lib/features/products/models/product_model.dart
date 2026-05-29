@@ -4,11 +4,17 @@ class Variant {
   final String id;
   final String size;
   final String color;
+  final String? colorCode;
+  final String fabric;
+  final String? fabricCode;
 
   const Variant({
     required this.id,
     required this.size,
     required this.color,
+    this.colorCode,
+    required this.fabric,
+    this.fabricCode,
   });
 }
 
@@ -54,6 +60,12 @@ class Product {
 
   /// immagine scontornata per outfit
   final String? outfitImageUrl;
+
+  /// NUOVI CAMPI PER AGGIUSTAMENTI VISIVI
+  final double outfitYOffset;
+  final double outfitXOffset;
+  final double outfitScale;
+
   final String? description;
   final String? composition;
   final String? season;
@@ -79,6 +91,9 @@ class Product {
     this.variants = const [],
     this.layer,
     this.outfitImageUrl,
+    this.outfitYOffset = 0.0,
+    this.outfitXOffset = 0.0,
+    this.outfitScale = 1.0,   // Default a 1
     this.description,
     this.composition,
     this.season,
@@ -94,15 +109,12 @@ class Product {
 
   /// immagine da mostrare nell'app
   String get displayImage {
-
     if (mainImage != null && mainImage!.isNotEmpty) {
       return mainImage!;
     }
-
     if (images.isNotEmpty) {
       return images.first;
     }
-
     return '';
   }
 
@@ -133,11 +145,20 @@ class Product {
           id: v['id'] ?? '',
           size: v['size'] ?? '',
           color: v['color'] ?? '',
+          colorCode: v['colorCode'],
+          fabric: v['fabric'] ?? '',
+          fabricCode: v['fabricCode'],
         ),
       )
           .toList(),
       layer: data['layer'] != null ? _mapLayer(data['layer']) : null,
       outfitImageUrl: data['outfitImageUrl'],
+
+      // CARICAMENTO NUOVI CAMPI
+      outfitYOffset: (data['outfitYOffset'] as num?)?.toDouble() ?? 0.0,
+      outfitXOffset: (data['outfitXOffset'] as num?)?.toDouble() ?? 0.0,
+      outfitScale: (data['outfitScale'] as num?)?.toDouble() ?? 1.0,
+
       description: data['description'],
       composition: data['composition'],
       season: data['season'],
@@ -174,6 +195,7 @@ class Product {
   static ProductGender _mapGender(String? value) {
     switch (value) {
       case 'male':
+      case 'man':
         return ProductGender.male;
       case 'female':
         return ProductGender.female;

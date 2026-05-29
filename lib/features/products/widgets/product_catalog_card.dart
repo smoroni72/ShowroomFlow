@@ -49,7 +49,7 @@ class ProductCatalogCard extends StatelessWidget {
       case ProductLayer.gloves:
         return 9; // più leggeri
       case null:
-        // TODO: Handle this case.
+      // TODO: Handle this case.
         throw UnimplementedError();
     }
   }
@@ -66,110 +66,111 @@ class ProductCatalogCard extends StatelessWidget {
     return Hero(
       tag: "product_${product.id}",
 
-        child: ClipRRect(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Material(
+          elevation:  _getElevation(product) * 0.7,
+          shadowColor: Colors.black.withOpacity(0.25),
           borderRadius: BorderRadius.circular(18),
-          child: Material(
-            elevation:  _getElevation(product) * 0.7,
-            shadowColor: Colors.black.withOpacity(0.25),
-            borderRadius: BorderRadius.circular(18),
 
-            child: AnimatedScale(
-              scale: 1,
-              duration: const Duration(milliseconds: 120),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ProductDetailScreen(product: product),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(18),
-              
-                child: Container(
-                  height: config.height,
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(18),
-              
-                    /// 🔥 NUOVA SHADOW (più visibile)
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.10),
-                        blurRadius: 20,
-                        spreadRadius: -6,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
-              
-                    /// 🔥 BORDO INVISIBILE (super importante)
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.08),
-                      width: 0.6,
-                    ),
+          child: AnimatedScale(
+            scale: 1,
+            duration: const Duration(milliseconds: 120),
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProductDetailScreen(product: product),
                   ),
-                  child: Stack(
-                    children: [
-                      /// IMMAGINE
-                      Positioned.fill(
-                        child: Transform.translate(
-                          offset: Offset(
-                            0,
-                            isAccessory ? config.offsetY * 0.6 : config.offsetY,
-                          ),
-                          child: Transform.scale(
-                            scale: config.scale,
-                            child: ProductImage(
-                              image: product.displayImage,
-                              fit: isAccessory ? BoxFit.contain : BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ),
-              
-                      /// LUCE
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.white.withOpacity(0.10),
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.25),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-              
-                      /// BADGE
-                      Positioned(
-                        left: 12,
-                        right: 12,
-                        bottom: 60,
-                        child: ProductBadge(layer: product.layer!),
-                      ),
-              
-                      /// INFO
-                      Positioned(
-                        left: 8,
-                        right: 8,
-                        bottom: 8,
-                        child: Info(
-                          product: product,
-                          isLogged: isLogged,
-                        ),
-                      ),
-                    ],
+                );
+              },
+              borderRadius: BorderRadius.circular(18),
+
+              child: Container(
+                height: config.height,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(18),
+
+                  /// 🔥 NUOVA SHADOW (più visibile)
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 20,
+                      spreadRadius: -6,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+
+                  /// 🔥 BORDO INVISIBILE (super importante)
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                    width: 0.6,
                   ),
+                ),
+                child: Stack(
+                  children: [
+                    /// IMMAGINE
+                    Positioned.fill(
+                      child: Transform.translate(
+                        offset: Offset(
+                          0,
+                          isAccessory ? config.offsetY * 0.6 : config.offsetY,
+                        ),
+                        child: Transform.scale(
+                          scale: config.scale,
+                          child: ProductImage(
+                            image: product.displayImage,
+                            fit: isAccessory ? BoxFit.contain : BoxFit.cover,
+                            size: ImageSize.small, // ⚡️ Ottimizzazione: RAM salvata!
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    /// LUCE
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withOpacity(0.10),
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.25),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    /// BADGE
+                    Positioned(
+                      left: 12,
+                      right: 12,
+                      bottom: 60,
+                      child: ProductBadge(layer: product.layer!),
+                    ),
+
+                    /// INFO
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      bottom: 8,
+                      child: Info(
+                        product: product,
+                        isLogged: isLogged,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
+      ),
 
     );
   }

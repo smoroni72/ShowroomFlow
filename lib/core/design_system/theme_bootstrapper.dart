@@ -18,97 +18,37 @@ class ThemeBootstrapper extends ConsumerStatefulWidget {
 }
 
 class _ThemeBootstrapperState extends ConsumerState<ThemeBootstrapper> {
-  bool _initialized = false;
-
   @override
   void initState() {
     super.initState();
-
-    Future.microtask(() async {
-      print("🚀 BOOTSTRAP START");
-      try {
-        // 🔥 check immediato (NO provider async)
-        final isOnline = await ConnectivityService.isOnline();
-        print("🌐 ONLINE: $isOnline");
-        final hasCache = await ref.read(hasLocalDataProvider.future);
-        print("💾 HAS CACHE: $hasCache");
-
-        final shouldShowOffline = !isOnline && !hasCache;
-        print("📴 SHOULD OFFLINE: $shouldShowOffline");
-
-        if (shouldShowOffline) {
-          print("⛔ OFFLINE MODE TRIGGERED");
-          if (mounted) {
-            setState(() {
-              _initialized = true;
-            });
-          }
-          return;
-        }
-
-        print("🎨 LOAD THEME");
-        final theme = await ref.read(remoteThemeProvider.future);
-        ref.read(appThemeProvider.notifier).state = theme;
-
-        print("🏬 LOAD SHOWROOM");
-        ref.invalidate(showroomProvider);
-        await ref.read(showroomProvider.future);
-
-      } catch (e) {
-        print("❌ BOOTSTRAP ERROR: $e");
-      }
-      print("✅ BOOTSTRAP END");
-      if (mounted) {
-        setState(() {
-          _initialized = true;
-        });
-      }
-    });
+    // Inizializzazione asincrona dei dati se necessario
+    // Riverpod gestirà il caricamento dei provider osservando i cambiamenti
   }
 
   @override
   Widget build(BuildContext context) {
-    print("🔥 OFFLINE GUARD BUILD");
+    // Cerchiamo di caricare il tema in background senza bloccare il build
+    ref.listen(remoteThemeProvider, (previous, next) {
+      next.whenData((theme) {
+        if (ref.read(appThemeProvider) != theme) {
+          ref.read(appThemeProvider.notifier).state = theme;
+        }
+      });
+    });
+
     final offlineGuard = ref.watch(offlineGuardProvider);
 
-    if (!_initialized) {
-      return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFFBC4A8C),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return offlineGuard.when(
+    return offlineGuard.maybeWhen(
       data: (shouldShowOffline) {
-        print("📴 SHOULD SHOW OFFLINE: $shouldShowOffline");
         if (shouldShowOffline) {
           return const MaterialApp(
             debugShowCheckedModeBanner: false,
             home: OfflineLandingPage(),
           );
         }
-
         return widget.child;
       },
-      loading: () => const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFFBC4A8C),
-            ),
-          ),
-        ),
-      ),
-      error: (_, __) => widget.child,
+      orElse: () => widget.child,
     );
   }
 }

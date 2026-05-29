@@ -1,20 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/auth_provider.dart';
 
-class MyVisitRequestsScreen extends StatelessWidget {
+class MyVisitRequestsScreen extends ConsumerWidget {
   const MyVisitRequestsScreen({super.key});
 
-
   Color statusColor(String status) {
-
     switch (status) {
       case "accepted":
         return Colors.green;
-
       case "rejected":
         return Colors.red;
-
       case "pending":
       default:
         return Colors.orange;
@@ -22,41 +19,34 @@ class MyVisitRequestsScreen extends StatelessWidget {
   }
 
   String statusLabel(String status) {
-
     switch (status) {
       case "accepted":
         return "Accettata";
-
       case "rejected":
         return "Rifiutata";
-
       case "pending":
       default:
         return "In attesa";
     }
   }
 
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tenantId = ref.watch(tenantIdProvider);
 
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
+    if (tenantId == null) {
       return const Scaffold(
-        body: Center(child: Text("Devi effettuare il login")),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // final query = FirebaseFirestore.instance
-    //     .collection("visit_requests")
-    //     .where("userId", isEqualTo: user.uid)
-    //     .orderBy("createdAt", descending: true);
     final query = FirebaseFirestore.instance
+        .collection("tenants")
+        .doc(tenantId)
         .collection("visit_requests")
         .where(
       "userId",
-      isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+      isEqualTo: ref.read(authStateProvider).value?.uid,
     );
 
     return Scaffold(

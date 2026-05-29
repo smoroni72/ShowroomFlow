@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/app_drawer.dart';
 import 'package:fashion_app/features/products/models/product_model.dart';
 import '../../core/widgets/product_image.dart';
 import '../auth/login_screen.dart';
@@ -175,6 +176,7 @@ class _VetrinaScreenState extends ConsumerState<VetrinaScreen> {
         }
         return Scaffold(
           backgroundColor: theme.background,
+          drawer: const AppDrawer(),
           appBar: AppBar(
             title: const Text("Simula Vetrina"),
             backgroundColor: theme.background,
@@ -205,7 +207,7 @@ class _VetrinaScreenState extends ConsumerState<VetrinaScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
-                        onPressed: canProceed ? _handleVisitRequest : null,
+                      onPressed: canProceed ? _handleVisitRequest : null,
                       style: FilledButton.styleFrom(
                         backgroundColor: theme.accent,
                         foregroundColor: Colors.white,
@@ -323,9 +325,9 @@ class _VetrinaScreenState extends ConsumerState<VetrinaScreen> {
                                 child: Text(
                                   "Reset",
                                   style: TextStyle(
-                                  color: theme.accent,
-                                  fontSize: 12,
-                                ),
+                                    color: theme.accent,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],

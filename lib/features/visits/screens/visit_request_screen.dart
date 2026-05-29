@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/auth_provider.dart';
 import '../../../core/widgets/product_image.dart';
 import '../../../core/providers/showroom_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -36,10 +37,13 @@ class _VisitRequestScreenState extends ConsumerState<VisitRequestScreen> {
   Future<void> submitRequest() async {
 
     final user = FirebaseAuth.instance.currentUser;
+    final tenantId = ref.read(tenantIdProvider);
 
-    if (user == null) return;
+    if (user == null || tenantId == null) return;
 
     final userDoc = await FirebaseFirestore.instance
+        .collection("tenants")
+        .doc(tenantId)
         .collection("users")
         .doc(user.uid)
         .get();
@@ -47,6 +51,8 @@ class _VisitRequestScreenState extends ConsumerState<VisitRequestScreen> {
     final userData = userDoc.data();
 
     await FirebaseFirestore.instance
+        .collection("tenants")
+        .doc(tenantId)
         .collection("visit_requests")
         .add({
 
@@ -93,13 +99,13 @@ class _VisitRequestScreenState extends ConsumerState<VisitRequestScreen> {
 
                 children: [
 
-                const Text(
-                  "Richiedi una visita dell'agente per visionare il campionario.",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                  const Text(
+                    "Richiedi una visita dell'agente per visionare il campionario.",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
                   const SizedBox(height: 30),
 
                   const Text("Seleziona giorno"),

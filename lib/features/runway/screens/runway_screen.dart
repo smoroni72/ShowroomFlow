@@ -33,11 +33,11 @@ class _RunwayScreenState extends ConsumerState<RunwayScreen> {
       body: runwayAsync.when(
 
         loading: () =>
-         Center(
-          child: CircularProgressIndicator(
-            color: theme.textPrimary,
-          ),
-        ),
+            Center(
+              child: CircularProgressIndicator(
+                color: theme.textPrimary,
+              ),
+            ),
 
         error: (e, _) =>
             Center(
@@ -48,53 +48,44 @@ class _RunwayScreenState extends ConsumerState<RunwayScreen> {
             ),
 
         data: (looks) {
-
           if (looks.isEmpty) {
             return const Center(
               child: Text("Runway non disponibile"),
             );
           }
 
-          /// preload immagini
-          for (var look in looks) {
-            precacheImage(NetworkImage(look.image), context);
-          }
-
           return PageView.builder(
-
             controller: _controller,
             scrollDirection: Axis.vertical,
             itemCount: looks.length,
-
+            onPageChanged: (index) {
+              // Precache next look image
+              if (index + 1 < looks.length) {
+                precacheImage(NetworkImage(looks[index+1].image), context);
+              }
+            },
             itemBuilder: (_, index) {
-
               final look = looks[index];
 
               return AnimatedBuilder(
-
                 animation: _controller,
-
                 builder: (_, child) {
-
                   double value = 0;
-
                   if (_controller.position.haveDimensions) {
-
                     value = index - (_controller.page ?? 0);
-                    value = (value * 0.2).clamp(-1, 1);
-
+                    value = (value * 0.15).clamp(-1, 1);
                   }
 
                   return Stack(
                     fit: StackFit.expand,
                     children: [
-
-                      /// PARALLAX IMAGE
+                      /// IMAGE - Using size medium for better performance
                       Transform.translate(
-                        offset: Offset(0, value * 80),
+                        offset: Offset(0, value * 60),
                         child: ProductImage(
                           image: look.image,
                           fit: BoxFit.cover,
+                          size: ImageSize.medium,
                         ),
                       ),
 

@@ -3,257 +3,257 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/design_system/theme_provider.dart';
 import '../../core/widgets/product_image.dart';
+import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import 'brand_home_screen.dart';
 import 'brand_home_screen_new.dart';
+import 'brand_model.dart';
 import 'brand_provider.dart';
+import 'coming_soon_screen.dart';
 import '../profile/screens/profile_screen.dart';
+import '../../core/widgets/app_drawer.dart';
+import '../../core/design_system/app_theme_model.dart';
 
 class BrandScreen extends ConsumerWidget {
   const BrandScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print("🎨 [BRAND SCREEN] Building BrandScreen...");
+
     ref.listen(remoteThemeProvider, (previous, next) {
       next.whenData((theme) {
+        print("🎨 [BRAND SCREEN] Remote theme updated.");
         ref.read(appThemeProvider.notifier).state = theme;
       });
     });
 
     final theme = ref.watch(appThemeProvider);
-    final brandsAsync = ref.watch(brandsProvider);
+    final brandsAsync = ref.watch(publishedBrandsProvider);
+    final tenantId = ref.watch(tenantIdProvider);
+
+    print("🏢 [BRAND SCREEN] Current TenantId: '$tenantId'");
 
     return Scaffold(
       backgroundColor: theme.background,
-      appBar: AppBar(
-        backgroundColor: theme.background,
-        foregroundColor: theme.textPrimary,
-        titleTextStyle: TextStyle(
-          color: theme.textPrimary,
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-        ),
-        iconTheme: IconThemeData(
-          color: theme.textPrimary,
-        ),
-        title: Text(
-          "Brands",
-          style: TextStyle(
-            color: theme.textPrimary,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-
-              final user = FirebaseAuth.instance.currentUser;
-
-              if (user == null) {
-
-                /// NON LOGGATO → LOGIN
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LoginScreen(),
-                  ),
-                );
-
-              } else {
-
-                /// LOGGATO → PROFILO
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ProfileScreen(),
-                  ),
-                );
-
-              }
-
-            },
-          ),
-
-        ],
-      ),
+      drawer: const AppDrawer(),
       body: brandsAsync.when(
         data: (brands) {
-
+          print("✅ [BRAND SCREEN] Brands loaded: ${brands.length}");
           if (brands.isEmpty) {
-            return const Center(child: Text("Nessun brand disponibile"));
+            return const ComingSoonScreen();
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: brands.length,
-            itemBuilder: (context, index) {
-
-              final brand = brands[index];
-
-              final headerImage =
-              brand.coverImage.isNotEmpty
-                  ? brand.coverImage
-                  : brand.logoUrl;
-
-              /// simulazione stato (poi useremo backend)
-              final bool available = brand.description != "coming";
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-
-                child: _PressableCard(
-                  onTap: () async {
-                    debugPrint("🟢 TAP BRAND: ${brand.name} / ${brand.id}");
-
-                    if (!available) return;
-
-                    final provider = headerImage.startsWith('http')
-                        ? NetworkImage(headerImage)
-                        : AssetImage(headerImage) as ImageProvider;
-
-                    precacheImage(provider, context).catchError((e) {
-                      debugPrint("❌ brand hero precache error: $e");
-                    });
-
-                    Navigator.push(
-                      context,
-                      _fadeRoute(
-                        BrandHomeScreenNew(
-                          brandId: brand.id,
-                          brandName: brand.name,
-                          coverImage: brand.coverImage,
-                          logoUrl: brand.logoUrl,
-                          description: brand.description,
-                        ),
-                      ),
-                    );
-                  },
-
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-
-                    child: Stack(
-                      children: [
-
-                        Container(
-                          color: theme.overlayLight.withOpacity(0.03),
-                        ),
-                        /// IMAGE
-                        AspectRatio(
-                          aspectRatio: 1.4,
-                          child: Hero(
-                            tag: 'brand_cover_${brand.id}',
-                            child: ProductImage(
-                              image: headerImage,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-
-                        /// GRADIENT
-                        Positioned.fill(
-                          child: Container(
-                            decoration:  BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.center,
-                                colors: [
-                                  theme.overlayDark,
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.center,
-                                colors: [
-                                  theme.overlayLight.withOpacity(0.15),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        /// BADGE STATUS
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: available
-                                  ? theme.overlayDark.withOpacity(0.85)
-                                  : theme.surface.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Text(
-                              available ? "Disponibile" : "Coming soon",
-                              style: TextStyle(
-                                color: available
-                                    ? Colors.white
-                                    : theme.textSecondary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        /// BRAND NAME
-                        Positioned(
-                          left: 16,
-                          right: 16,
-                          bottom: 16,
-                          child: Text(
-                            brand.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                      ],
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: theme.background,
+                expandedHeight: 120,
+                floating: true,
+                pinned: true,
+                elevation: 0,
+                leading: Builder(
+                  builder: (context) => IconButton(
+                    icon: Icon(Icons.menu, color: theme.textPrimary),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  ),
+                ),
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: false,
+                  titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+                  title: Text(
+                    "Brand",
+                    style: TextStyle(
+                      color: theme.textPrimary,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1,
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
                 ),
-              );
-            },
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                      final brand = brands[index];
+                      final rawHeader = brand.coverImage.isNotEmpty
+                          ? brand.coverImage
+                          : brand.logoUrl;
+                      final headerImage = rawHeader.startsWith('/')
+                          ? "https://fashion-app-ed9d3.web.app$rawHeader"
+                          : rawHeader;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: _PressableCard(
+                          onTap: () async {
+                            final provider = headerImage.startsWith('http')
+                                ? NetworkImage(headerImage)
+                                : AssetImage(headerImage) as ImageProvider;
+
+                            await precacheImage(provider, context).catchError((_) {});
+
+                            if (context.mounted) {
+                              Navigator.push(
+                                context,
+                                _fadeRoute(
+                                  BrandHomeScreenNew(
+                                    brandId: brand.id,
+                                    brandName: brand.name,
+                                    coverImage: brand.coverImage,
+                                    logoUrl: brand.logoUrl,
+                                    description: brand.description,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: _BrandCardInner(
+                            brand: brand,
+                            theme: theme,
+                            headerImage: headerImage,
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: brands.length,
+                  ),
+                ),
+              ),
+            ],
           );
         },
-
-        loading: () => ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: 4,
-          itemBuilder: (_, __) => Container(
-            height: 180,
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: theme.surface,
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: theme.primary,
+            strokeWidth: 3,
+          ),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline_rounded, size: 48, color: theme.accent),
+                const SizedBox(height: 16),
+                Text(
+                  "Errore nel caricamento: $e",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.textPrimary, fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
 
-        error: (e, _) => Center(
-          child: Text(
-            "Errore: $e",
-            style: TextStyle(color: theme.textSecondary),
+class _BrandCardInner extends StatelessWidget {
+  final Brand brand;
+  final AppThemeModel theme;
+  final String headerImage;
+
+  const _BrandCardInner({
+    required this.brand,
+    required this.theme,
+    required this.headerImage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Stack(
+          children: [
+            AspectRatio(
+              aspectRatio: 1.5,
+              child: Hero(
+                tag: 'brand_cover_${brand.id}',
+                child: ProductImage(
+                  image: headerImage,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.8),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 24,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (brand.logoUrl.isNotEmpty)
+                        Container(
+                          width: 80,
+                          height: 80,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                blurRadius: 15,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ProductImage(image: brand.logoUrl, fit: BoxFit.contain),
+                        ),
+                      if (brand.logoUrl.isNotEmpty) const SizedBox(width: 20),
+                      Expanded(
+                        child: Text(
+                          brand.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

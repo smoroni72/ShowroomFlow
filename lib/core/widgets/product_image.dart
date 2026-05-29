@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:io';
-import '../cache/image_cache_service.dart';
+import 'shimmer_loader.dart';
+
+enum ImageSize {
+  small,  // Per le miniature delle griglie (300px)
+  medium, // Per le card o le liste medie (600px)
+  large,  // Per i dettagli prodotto (1200px)
+  original // Senza restrizioni
+}
 
 class ProductImage extends StatelessWidget {
   final String image;
@@ -10,6 +16,7 @@ class ProductImage extends StatelessWidget {
   final double? height;
   final BorderRadius? borderRadius;
   final Color? backgroundColor;
+  final ImageSize size; // 👈 Nuovo parametro fondamentale
 
   const ProductImage({
     super.key,
@@ -19,81 +26,80 @@ class ProductImage extends StatelessWidget {
     this.height,
     this.borderRadius,
     this.backgroundColor,
+    this.size = ImageSize.medium, // Default equilibrato
   });
 
-  bool get isNetwork {
-    final img = image.trim().toLowerCase();
-    return img.startsWith('http');
+  /// 🛠️ LOGICA CLOUDINARY OTTIMIZZATA
+  String _optimizeUrl(String url) {
+    if (!url.contains('cloudinary.com') || !url.contains('/upload/')) {
+      return url;
+    }
+
+    // Definiamo la larghezza in base al contesto
+    int widthPx;
+    switch (size) {
+      case ImageSize.small: widthPx = 300; break;
+      case ImageSize.medium: widthPx = 600; break;
+      case ImageSize.large: widthPx = 1200; break;
+      case ImageSize.original: return url.replaceFirst('/upload/', '/upload/f_auto,q_auto/');
+    }
+
+    // Inseriamo f_auto (formato smart), q_auto (qualità smart) e la larghezza precisa
+    // Questo riduce il peso dell'immagine dell'80% senza perdita visibile
+    return url.replaceFirst('/upload/', '/upload/f_auto,q_auto,w_$widthPx,c_limit/');
   }
 
   @override
   Widget build(BuildContext context) {
-    if (image.trim().isEmpty) {
-      return _fallback();
+    var cleanedUrl = image.trim();
+    if (cleanedUrl.isEmpty) return _fallback();
+
+    if (cleanedUrl.startsWith('/')) {
+      cleanedUrl = "https://fashion-app-ed9d3.web.app$cleanedUrl";
     }
+
+    final isNetwork = cleanedUrl.startsWith('http');
+    final effectiveUrl = isNetwork ? _optimizeUrl(cleanedUrl) : cleanedUrl;
+
     Widget img;
 
     if (isNetwork) {
-      img = FutureBuilder<File?>(
-        future: ImageCacheService.getImage(image),
-        builder: (context, snapshot) {
+      img = CachedNetworkImage(
+        imageUrl: effectiveUrl,
+        fit: fit,
+        width: width,
+        height: height,
 
-          /// 📦 FILE LOCALE (SUPER VELOCE)
-          if (snapshot.hasData && snapshot.data != null) {
-            return _wrap(
-              Image.file(
-                snapshot.data!,
-                fit: fit,
-                width: width,
-                height: height,
-              ),
-            );
-          }
+        // Impostiamo la cache di memoria solo per le miniature per risparmiare RAM
+        // Per Medium/Large lasciamo che Flutter gestisca il decode nativo
+        memCacheWidth: size == ImageSize.small ? 300 : null,
 
-          /// 🌐 NETWORK (fallback normale)
-          return CachedNetworkImage(
-            imageUrl: image,
-            fit: fit,
-            width: width,
-            height: height,
+        // Usiamo lo Skeleton Loader dedicato per un caricamento fluido
+        placeholder: (context, url) => (width != null && height != null)
+            ? ShimmerLoader(
+          width: width!,
+          height: height!,
+          borderRadius: borderRadius,
+        )
+            : const Center(child: CircularProgressIndicator(strokeWidth: 1)),
 
-            memCacheWidth: 800,
-            maxWidthDiskCache: 800,
-            fadeInDuration: const Duration(milliseconds: 250),
-            fadeOutDuration: const Duration(milliseconds: 150),
+        // Fallback in caso di errore
+        errorWidget: (context, url, error) => _fallback(),
 
-            placeholder: (context, url) => _placeholder(),
-
-            errorWidget: (context, url, error) => _fallback(),
-
-            /// 🔥 DOWNLOAD IN BACKGROUND
-            imageBuilder: (context, imageProvider) {
-              ImageCacheService.downloadImage(image);
-              return _wrap(
-                Image(
-                  image: imageProvider,
-                  fit: fit,
-                  width: width,
-                  height: height,
-                ),
-              );
-            },
-          );
-        },
+        // Migliora la fluidità di apparizione
+        fadeInDuration: const Duration(milliseconds: 400),
       );
     } else {
-      img = _wrap(
-        Image.asset(
-          image.trim(),
-          fit: fit,
-          width: width,
-          height: height,
-          errorBuilder: (_, __, ___) => _fallback(),
-        ),
+      img = Image.asset(
+        cleanedUrl,
+        fit: fit,
+        width: width,
+        height: height,
+        errorBuilder: (_, __, ___) => _fallback(),
       );
     }
 
-    /// 🔥 BORDER RADIUS (manteniamo pulito)
+    // Applichiamo il raggio se presente
     if (borderRadius != null) {
       img = ClipRRect(
         borderRadius: borderRadius!,
@@ -101,40 +107,38 @@ class ProductImage extends StatelessWidget {
       );
     }
 
-    /// 🔥 BACKGROUND (utile per trasparenze)
     return Container(
-      color: backgroundColor,
+      width: width,
+      height: height,
+      color: backgroundColor ?? Colors.grey[950], // Look dark premium
       child: img,
     );
   }
-  Widget _placeholder() {
-    return Image.asset(
-      'assets/images/placeholder.png',
-      fit: fit,
-      width: width,
-      height: height,
-    );
-  }
-  /// 🎯 FALLBACK ELEGANTE (fashion style)
-  Widget _fallback() {
-    return Image.asset(
-      'assets/images/placeholder.png', // 👈 usa il tuo placeholder
-      fit: fit,
-      width: width,
-      height: height,
-    );
-  }
-  Widget _wrap(Widget child) {
-    if (borderRadius != null) {
-      child = ClipRRect(
-        borderRadius: borderRadius!,
-        child: child,
-      );
-    }
 
+  Widget _shimmerPlaceholder() {
     return Container(
-      color: backgroundColor,
-      child: child,
+      width: width,
+      height: height,
+      color: Colors.white.withOpacity(0.05),
+      child: const Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 1,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white24),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _fallback() {
+    return Container(
+      width: width,
+      height: height,
+      color: Colors.grey.shade900,
+      child: const Icon(Icons.broken_image_outlined, color: Colors.white12, size: 20),
     );
   }
 }

@@ -1,3 +1,4 @@
+import '../../core/widgets/app_drawer.dart';
 import 'package:fashion_app/features/products/screens/product_list_screen_new.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import '../products/models/product_model.dart';
 import '../products/providers/product_provider.dart';
 import '../products/widgets/featured_products_carousel.dart';
 import '../runway/screens/runway_screen.dart';
+import '../../core/widgets/shimmer_loader.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class BrandHomeScreenNew extends ConsumerStatefulWidget {
@@ -77,8 +79,12 @@ class _BrandHomeScreenNewState extends ConsumerState<BrandHomeScreenNew> {
   }
 
   ImageProvider _imageProvider(String image) {
-    if (image.startsWith('http')) return NetworkImage(image);
-    return AssetImage(image);
+    var imgUrl = image;
+    if (imgUrl.startsWith('/')) {
+      imgUrl = "https://fashion-app-ed9d3.web.app$imgUrl";
+    }
+    if (imgUrl.startsWith('http')) return NetworkImage(imgUrl);
+    return AssetImage(imgUrl);
   }
 
   void _precacheAssetsIfNeeded(
@@ -118,13 +124,15 @@ class _BrandHomeScreenNewState extends ConsumerState<BrandHomeScreenNew> {
   @override
   Widget build(BuildContext context) {
     final appTheme = ref.watch(appThemeProvider);
-    final productsAsync = ref.watch(productsProvider(widget.brandId));
+    final featuredProductsAsync = ref.watch(featuredProductsProvider(widget.brandId));
+    final categoriesAsync = ref.watch(homeCategoriesProvider(widget.brandId));
 
     final headerImage =
     widget.coverImage.isNotEmpty ? widget.coverImage : widget.logoUrl;
 
     return Scaffold(
       backgroundColor: appTheme.background,
+      drawer: const AppDrawer(),
       bottomNavigationBar: _BottomEditorialActions(
         theme: appTheme,
         onCatalogTap: () => _openCatalog(
@@ -135,139 +143,124 @@ class _BrandHomeScreenNewState extends ConsumerState<BrandHomeScreenNew> {
         onRunwayTap: () => _openRunway(context),
         onVetrinaTap: () => _openVetrina(context),
       ),
-      body: productsAsync.when(
-        loading: () {
-          debugPrint("⏳ productsAsync loading: ${widget.brandId}");
-          return _BrandHomeLoadingState(
-            brandId: widget.brandId,
-            brandName: widget.brandName,
-            headerImage: headerImage,
-            logoUrl: widget.logoUrl,
-          );
-        },
-        error: (error, stack) {
-          return _BrandHomeErrorState(
-            theme: appTheme,
-            brandName: widget.brandName,
-            headerImage: headerImage,
-            message: 'Errore nel caricamento del brand: $error',
-            onRetry: () => ref.invalidate(productsProvider(widget.brandId)),
-          );
-        },
-        data: (products) {
-          debugPrint("✅ BrandHome products: ${products.length}");
-          for (final p in products.take(5)) {
-            debugPrint("🧾 ${p.code} -> ${p.displayImage}");
-          }
-          final visibleProducts = products
-              .where((p) => p.visible)
-              .toList()
-            ..sort((a, b) => a.order.compareTo(b.order));
+      body: categoriesAsync.when(
+        loading: () => const BrandHomeSkeleton(),
+        error: (e, _) => Center(child: Text("Errore: $e")),
+        data: (_) => CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _BrandHeroSliver(
+              theme: appTheme,
+              brandId: widget.brandId,
+              brandName: widget.brandName,
+              description: widget.description,
+              headerImage: headerImage,
+              logoUrl: widget.logoUrl,
+              onCatalogTap: () => _openCatalog(
+                context: context,
+                categoryId: 'all',
+                categoryName: 'Catalogo',
+              ),
+              onRunwayTap: () => _openRunway(context),
+            ),
 
-          final categories = _buildCategoryItems(visibleProducts);
-
-          final featuredProducts = visibleProducts
-              .where((p) => p.featured)
-              .toList()
-            ..sort((a, b) => a.order.compareTo(b.order));
-
-          _precacheAssetsIfNeeded(
-            context,
-            headerImage,
-            categories,
-            visibleProducts, // 👈 NUOVO
-          );
-
-          return CustomScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              _BrandHeroSliver(
+            SliverToBoxAdapter(
+              child: _BrandIntroBlock(
                 theme: appTheme,
-                brandId: widget.brandId,
                 brandName: widget.brandName,
                 description: widget.description,
-                headerImage: headerImage,
-                logoUrl: widget.logoUrl,
-                onCatalogTap: () => _openCatalog(
+                onExploreTap: () => _openCatalog(
                   context: context,
                   categoryId: 'all',
                   categoryName: 'Catalogo',
                 ),
-                onRunwayTap: () => _openRunway(context),
               ),
+            ),
 
-              SliverToBoxAdapter(
-                child: _BrandIntroBlock(
+            categoriesAsync.when(
+              data: (visibleProducts) {
+                final categories = _buildCategoryItems(visibleProducts);
+
+                if (categories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+                _precacheAssetsIfNeeded(context, headerImage, categories, visibleProducts);
+
+                return SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(
+                        theme: appTheme,
+                        eyebrow: 'Edit',
+                        title: 'Categorie selezionate',
+                        subtitle: 'Una navigazione editoriale pensata per entrare subito nelle linee prodotto più rilevanti.',
+                      ),
+                      _EditorialCategoriesSection(
+                        theme: appTheme,
+                        items: categories,
+                        brandId: widget.brandId,
+                        onCategoryTap: (item) {
+                          _openCatalog(
+                            context: context,
+                            categoryId: item.categoryId,
+                            categoryName: item.title,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+              error: (e, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+
+            /// FEATURED
+            featuredProductsAsync.when(
+              data: (featuredProducts) {
+                if (featuredProducts.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+                return SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionHeader(
+                        theme: appTheme,
+                        eyebrow: 'Featured',
+                        title: 'Collezione in evidenza',
+                        subtitle: 'Una selezione curata dei prodotti chiave del brand.',
+                      ),
+                      FeaturedProductsCarousel(
+                        title: '',
+                        products: featuredProducts,
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+              ),
+              error: (e, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                child: _BrandClosingBanner(
                   theme: appTheme,
                   brandName: widget.brandName,
-                  description: widget.description,
-                  onExploreTap: () => _openCatalog(
-                    context: context,
-                    categoryId: 'all',
-                    categoryName: 'Catalogo',
-                  ),
+                  onPrimaryTap: () => _openVetrina(context),
+                  onSecondaryTap: () => _openRunway(context),
                 ),
               ),
-
-              if (categories.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: _SectionHeader(
-                    theme: appTheme,
-                    eyebrow: 'Edit',
-                    title: 'Categorie selezionate',
-                    subtitle:
-                    'Una navigazione editoriale pensata per entrare subito nelle linee prodotto più rilevanti.',
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: _EditorialCategoriesSection(
-                    theme: appTheme,
-                    items: categories,
-                    brandId: widget.brandId,
-                    onCategoryTap: (item) {
-                      _openCatalog(
-                        context: context,
-                        categoryId: item.categoryId,
-                        categoryName: item.title,
-                      );
-                    },
-                  ),
-                ),
-              ],
-
-              if (featuredProducts.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: _SectionHeader(
-                    theme: appTheme,
-                    eyebrow: 'Featured',
-                    title: 'Collezione in evidenza',
-                    subtitle:
-                    'Una selezione curata dei prodotti chiave del brand.',
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: FeaturedProductsCarousel(
-                    title: '',
-                    products: featuredProducts,
-                  ),
-                ),
-              ],
-
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-                  child: _BrandClosingBanner(
-                    theme: appTheme,
-                    brandName: widget.brandName,
-                    onPrimaryTap: () => _openVetrina(context),
-                    onSecondaryTap: () => _openRunway(context),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -356,6 +349,12 @@ class _BrandHeroSliver extends StatelessWidget {
       stretch: true,
       elevation: 0,
       expandedHeight: 560,
+      leading: Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+      ),
       titleSpacing: 0,
       title: Text(
         brandName,
@@ -381,6 +380,7 @@ class _BrandHeroSliver extends StatelessWidget {
               child: ProductImage(
                 image: headerImage,
                 fit: BoxFit.cover,
+                size: ImageSize.large,
               ),
             ),
 
@@ -503,6 +503,7 @@ class _HeroBrandBadge extends StatelessWidget {
               child: ProductImage(
                 image: logoUrl,
                 fit: BoxFit.cover,
+                size: ImageSize.small,
               ),
             ),
           ),

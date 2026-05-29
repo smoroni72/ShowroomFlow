@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/auth_provider.dart';
 
 import '../../../core/design_system/theme_provider.dart';
 import '../../../core/widgets/product_image.dart';
@@ -52,7 +53,12 @@ class _LookProductsScreenState extends ConsumerState<LookProductsScreen> {
         return;
       }
 
+      final tenantId = ref.read(tenantIdProvider);
+      if (tenantId == null) return;
+
       final snap = await FirebaseFirestore.instance
+          .collection("tenants")
+          .doc(tenantId)
           .collection("products")
           .where(FieldPath.documentId, whereIn: widget.productIds)
           .get();
@@ -64,18 +70,29 @@ class _LookProductsScreenState extends ConsumerState<LookProductsScreen> {
           .toList();
 
       final size = MediaQuery.of(context).size;
+      final centerX = size.width / 2;
+      final centerY = size.height / 2;
 
       final newPositions = <String, Offset>{};
       final newRotations = <String, double>{};
       final newDynamicRotations = <String, double>{};
 
-      for (final product in loadedProducts) {
+      for (int i = 0; i < loadedProducts.length; i++) {
+        final product = loadedProducts[i];
+
+        // Calcola una posizione radiale per evitare sovrapposizioni totali al centro
+        final double angle = (2 * pi / loadedProducts.length) * i;
+        final double radius = 40.0 + (i * 20.0);
+
+        final double x = centerX - 105 + (cos(angle) * radius) + (random.nextDouble() * 20 - 10);
+        final double y = centerY - 180 + (sin(angle) * radius) + (random.nextDouble() * 20 - 10);
+
         newPositions[product.id] = Offset(
-          random.nextDouble() * max(0, size.width - 210),
-          random.nextDouble() * max(0, size.height - 360),
+          x.clamp(0.0, max(0.0, size.width - 210)),
+          y.clamp(0.0, max(0.0, size.height - 360)),
         );
 
-        final baseRotation = (random.nextDouble() - 0.5) * 0.4;
+        final baseRotation = (random.nextDouble() - 0.5) * 0.3;
         newRotations[product.id] = baseRotation;
         newDynamicRotations[product.id] = baseRotation;
       }
